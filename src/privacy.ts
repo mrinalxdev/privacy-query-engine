@@ -47,6 +47,32 @@ export function gaussianMechanism(
   };
 }
 
+
+
+export function applyDPToRows(
+  rows: Record<string, unknown>[],
+  numericColumns: string[],
+  params: PrivacyParams,
+  mechanism: "laplace" | "gaussian" = "laplace"
+): { rows: Record<string, unknown>[]; epsilon_used: number } {
+  const noisedRows = rows.map((row) => {
+    const noisedRow = { ...row };
+    for (const col of numericColumns) {
+      const val = Number(row[col]) || 0;
+      const result =
+        mechanism === "laplace"
+          ? laplaceMechanism(val, params)
+          : gaussianMechanism(val, params);
+      noisedRow[col] = Number.isInteger(val)
+        ? Math.max(0, Math.round(result.value))
+        : parseFloat(result.value.toFixed(4));
+    }
+    return noisedRow;
+  });
+
+  return { rows: noisedRows, epsilon_used: params.epsilon };
+}
+
 // --- all the utility function will be written here
 function sampleLaplace(mu: number, b: number): number {
   const u = Math.random() - 0.5;
